@@ -20,7 +20,7 @@ bool CartesianImpedanceExampleController::init(hardware_interface::RobotHW* robo
   std::vector<double> cartesian_damping_vector;
 
   sub_equilibrium_pose_ = node_handle.subscribe(
-      "/equilibrium_pose", 20, &CartesianImpedanceExampleController::equilibriumPoseCallback, this,
+      "equilibrium_pose", 20, &CartesianImpedanceExampleController::equilibriumPoseCallback, this,
       ros::TransportHints().reliable().tcpNoDelay());
 
   std::string arm_id;
@@ -85,7 +85,7 @@ bool CartesianImpedanceExampleController::init(hardware_interface::RobotHW* robo
   }
 
   dynamic_reconfigure_compliance_param_node_ =
-      ros::NodeHandle("dynamic_reconfigure_compliance_param_node");
+      ros::NodeHandle(node_handle.getNamespace() + "dynamic_reconfigure_compliance_param_node");
 
   dynamic_server_compliance_param_ = std::make_unique<
       dynamic_reconfigure::Server<franka_example_controllers::compliance_paramConfig>>(
@@ -193,6 +193,8 @@ void CartesianImpedanceExampleController::update(const ros::Time& /*time*/,
       filter_params_ * cartesian_damping_target_ + (1.0 - filter_params_) * cartesian_damping_;
   nullspace_stiffness_ =
       filter_params_ * nullspace_stiffness_target_ + (1.0 - filter_params_) * nullspace_stiffness_;
+  std::lock_guard<std::mutex> position_d_target_mutex_lock(
+      position_and_orientation_d_target_mutex_);
   position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
   orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 }
@@ -235,6 +237,8 @@ void CartesianImpedanceExampleController::complianceParamCallback(
 
 void CartesianImpedanceExampleController::equilibriumPoseCallback(
     const geometry_msgs::PoseStampedConstPtr& msg) {
+  std::lock_guard<std::mutex> position_d_target_mutex_lock(
+      position_and_orientation_d_target_mutex_);
   position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
   Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
   orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
