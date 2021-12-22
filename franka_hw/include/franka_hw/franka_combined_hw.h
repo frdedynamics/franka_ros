@@ -18,7 +18,6 @@ class FrankaCombinedHW : public combined_robot_hw::CombinedRobotHW {
  public:
   /**
    * Creates an instance of CombinedFrankaHW.
-   *
    */
   FrankaCombinedHW();
 
@@ -50,13 +49,31 @@ class FrankaCombinedHW : public combined_robot_hw::CombinedRobotHW {
    */
   bool controllerNeedsReset();
 
+  /**
+   * Calls connect on all hardware classes that are of type `FrankaCombinableHW`.
+   */
+  void connect();
+
+  /**
+   * Tries to disconnect on all hardware classes that are of type `FrankaCombinableHW`.
+   * @return true if successful, false otherwise.
+   */
+  bool disconnect();
+
+  /**
+   * Checks whether the robots are in error or reflex mode.
+   * @return true if in error state, false otherwise.
+   */
+  bool hasError();
+
  protected:
   std::unique_ptr<actionlib::SimpleActionServer<franka_msgs::ErrorRecoveryAction>>
       combined_recovery_action_server_;
+  ros::ServiceServer connect_server_;
+  ros::ServiceServer disconnect_server_;
 
  private:
   void handleError();
-  bool hasError();
   void triggerError();
   bool is_recovering_{false};
 };
