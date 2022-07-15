@@ -68,7 +68,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
 
 void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   // get initial pose 
-  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d; // why O_T_EE_d not O_T_EE ?
+  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE; // why O_T_EE_d not O_T_EE ?
   // convert to eigen
   Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_pose_.data()));
   // set goal pose to current state
