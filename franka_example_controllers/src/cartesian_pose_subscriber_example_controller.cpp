@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <numeric>
+
 #include <controller_interface/controller_base.h>
 #include <franka_hw/franka_cartesian_command_interface.h>
 #include <hardware_interface/hardware_interface.h>
@@ -76,7 +78,11 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.linear());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.linear());
-
+  // initialize basis function params
+  center_distance_ = 1.0 / (nr_basis_fcns_ - 1 - 2 * interval_extension_);
+  basis_fcn_width_ = 0.5 * pow(center_distance_, 2);
+  std::vector<int> temp_range(nr_basis_fcns);
+  basis_fcn_centers_ = - interval_extension_ * center_distance_ + std::iota(std::begin(temp_range), std::end(temp_range), 0) * center_distance_;
   elapsed_time_ = ros::Duration(0.0);
 }
 

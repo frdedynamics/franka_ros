@@ -3,6 +3,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <mutex>
 #include <memory>
 #include <string>
@@ -40,6 +41,17 @@ class CartesianPoseSubExampleController
   Eigen::Vector3d position_d_target_;
   Eigen::Quaterniond orientation_d_target_;
 
+  // Basis Functions
+  double nr_basis_fcns
+  double interval_extension_{0};
+  double center_distance_;
+  double basis_fcn_width;
+  std::vector<double> basis_fcn_centers;
+  std::vector<double> time_vector;
+  std::vector<double> phase_dot;
+
+  
+  
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
   void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
