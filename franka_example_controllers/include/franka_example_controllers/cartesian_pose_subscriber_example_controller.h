@@ -41,17 +41,24 @@ class CartesianPoseSubExampleController
   Eigen::Vector3d position_d_target_;
   Eigen::Quaterniond orientation_d_target_;
 
-  // Basis Functions
-  double nr_basis_fcns
+public: //set to public for testing
+  // Basis Function Model
+  double nr_dof_{7}; // 3 trans + 4 quaternion
+  double nr_basis_fcns_;
   double interval_extension_{0};
   double center_distance_;
-  double basis_fcn_width;
-  std::vector<double> basis_fcn_centers;
-  std::vector<double> time_vector;
-  std::vector<double> phase_dot;
+  double basis_fcn_width_;
+  double nr_time_steps_{3};
+  double demo_duration_{30};
+  Eigen::VectorXd mean_weights_;
+  Eigen::VectorXd mean_;
+  Eigen::VectorXd basis_fcn_centers_;
+  Eigen::MatrixXd basis_fcn_matrix_;
+  Eigen::MatrixXd basis_fcn_matrix_dot_;
+  Eigen::MatrixXd basis_fcn_matrix_dot_dot_;
+  void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period);
+  void CartesianPoseSubExampleController::computeNextTimeSteps();
 
-  
-  
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
   void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);

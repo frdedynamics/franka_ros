@@ -65,6 +65,18 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   position_d_target_.setZero();
   orientation_d_target_.coeffs() << 0.0, 0.0, 0.0, 1.0;
 
+  // initialize basis function params
+  node_handle.getParam("promp_params/fixed/nr_basis_fcns", nr_basis_fcns_);
+  node_handle.getParam("promp_params/learned/mean_demo_duration", demo_duration_);
+  std::vector<double> temp_mean_weights;
+  node_handle.getParam("promp_params/learned/meand_weights", temp_mean_weights);
+  mean_weights_ = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(temp_mean_weights.data(), temp_mean_weights.size()); // NB! High chance of error while reading the mean_weights here
+  center_distance_ = 1.0 / (nr_basis_fcns_ - 1 - 2 * interval_extension_); // TODO: some stuff needs to be read from ros param before these lines
+  basis_fcn_width_ = 0.5 * pow(center_distance_, 2);
+  for (int i = 0; i < nr_basis_fcns_; i++){
+    basis_fcn_centers_(i) = - interval_extension_ * center_distance_ +  i * center_distance_;
+  }
+  
   return true;
 }
 
@@ -78,11 +90,7 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.linear());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.linear());
-  // initialize basis function params
-  center_distance_ = 1.0 / (nr_basis_fcns_ - 1 - 2 * interval_extension_);
-  basis_fcn_width_ = 0.5 * pow(center_distance_, 2);
-  std::vector<int> temp_range(nr_basis_fcns);
-  basis_fcn_centers_ = - interval_extension_ * center_distance_ + std::iota(std::begin(temp_range), std::end(temp_range), 0) * center_distance_;
+  
   elapsed_time_ = ros::Duration(0.0);
 }
 
@@ -121,6 +129,34 @@ void CartesianPoseSubExampleController::goalPoseCallback(
   if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
     orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
   }
+}
+
+void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period){
+  basis_fcn_matrix_.setZero(nr_time_steps_, nr_basis_fcns_);
+  basis_fcn_matrix_dot_.setZero(nr_time_steps_, nr_basis_fcns_);
+  basis_fcn_matrix_dot_dot_.setZero(nr_time_steps_, nr_basis_fcns_);
+  Eigen::VectorXd x_t;
+  double elapsed_phase = elapsed_time_.toSec() / demo_duration_;
+  double phase_dot = 1 / demo_duration_;
+
+  for (int t = 0; t < nr_time_steps_; t++){
+    x_t = elapsed_phase + (t * period.toSec() * phase_dot) - basis_fcn_centers_.array();
+    basis_fcn_matrix_.row(t) = Eigen::exp(- x_t.array().square() / (2*basis_fcn_width_));
+    //TODO: basis_fcn_matrix_dot_ and basis_fcn_matrix_dot_dot_
+  }
+  Eigen::MatrixXd basis_fcn_matrix_sum = basis_fcn_matrix_.array().rowwise().sum().inverse();
+  basis_fcn_matrix_ = basis_fcn_matrix_.transpose() * basis_fcn_matrix_sum.asDiagonal(); // normalize basis fcns
+  basis_fcn_matrix_ = basis_fcn_matrix_.transpose();
+}
+
+void CartesianPoseSubExampleController::computeNextTimeSteps(){
+  for (int t = 0; t < nr_time_steps_; t++){
+    Eigen::MatrixXd basis_fcn_matrix_blockdiag_time_sliced = Eigen::MatrixXd::Zero(basis_fcn_matrix_.rows() * nr_dof_, basis_fcn_centers_.cols() * nr_dof_);
+    for (int i = 0; i < nr_dof_; i++){
+      basis_fcn_matrix_blockdiag_time_sliced.block(i * basis_fcn_matrix_.rows(), i * basis_fcn_matrix_.cols(), basis_fcn_matrix_.rows(), basis_fcn_matrix_.cols()) = basis_fcn_matrix_.row(t);
+    }
+    mean_.row(t) = basis_fcn_matrix_blockdiag_time_sliced * mean_weights_; 
+  }  
 }
 
 }  // namespace franka_example_controllers
