@@ -98,7 +98,12 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
 void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
                                             const ros::Duration& period) {
   elapsed_time_ += period;
+  CartesianPoseSubExampleController::computeBasisFcns(period);
+  CartesianPoseSubExampleController::computeNextTimeSteps();
+  position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
+  orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
 
+ 
   Eigen::Affine3d new_transform;
   new_transform.translation() = position_d_;
   new_transform.linear() = orientation_d_.toRotationMatrix();
@@ -110,13 +115,14 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
     new_pose[i] = new_transform_matrix(i);
   }
   cartesian_pose_handle_->setCommand(new_pose);
-
+  
+ //_____________old______________:
   // update parameters changed online through the interactive
   // target by filtering
-  std::lock_guard<std::mutex> position_d_target_mutex_lock(
-      position_and_orientation_d_target_mutex_);
-  position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
-  orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+  //std::lock_guard<std::mutex> position_d_target_mutex_lock(
+  //     position_and_orientation_d_target_mutex_);
+  // position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
+  // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 }
 
 void CartesianPoseSubExampleController::goalPoseCallback(
