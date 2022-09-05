@@ -56,8 +56,8 @@ public: //set to public for testing
   Eigen::MatrixXd basis_fcn_matrix_;
   Eigen::MatrixXd basis_fcn_matrix_dot_;
   Eigen::MatrixXd basis_fcn_matrix_dot_dot_;
-  void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period);
-  void CartesianPoseSubExampleController::computeNextTimeSteps();
+  void computeBasisFcns(const ros::Duration& period);
+  void computeNextTimeSteps();
 
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
