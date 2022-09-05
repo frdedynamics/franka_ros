@@ -19,9 +19,6 @@ namespace franka_example_controllers {
 
 bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_hardware,
                                           ros::NodeHandle& node_handle) {
-  sub_goal_pose_ = node_handle.subscribe(
-      "goal_pose", 20, &CartesianPoseSubExampleController::goalPoseCallback, this,
-      ros::TransportHints().reliable().tcpNoDelay());
 
   cartesian_pose_interface_ = robot_hardware->get<franka_hw::FrankaPoseCartesianInterface>();
   if (cartesian_pose_interface_ == nullptr) {
@@ -115,7 +112,7 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
     new_pose[i] = new_transform_matrix(i);
   }
   cartesian_pose_handle_->setCommand(new_pose);
-  
+
  //_____________old______________:
   // update parameters changed online through the interactive
   // target by filtering
@@ -125,18 +122,6 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 }
 
-void CartesianPoseSubExampleController::goalPoseCallback(
-    const geometry_msgs::PoseStampedConstPtr& msg) {
-  std::lock_guard<std::mutex> position_d_target_mutex_lock(
-      position_and_orientation_d_target_mutex_);
-  position_d_target_ << msg->pose.position.x, msg->pose.position.y, msg->pose.position.z;
-  Eigen::Quaterniond last_orientation_d_target(orientation_d_target_);
-  orientation_d_target_.coeffs() << msg->pose.orientation.x, msg->pose.orientation.y,
-      msg->pose.orientation.z, msg->pose.orientation.w;
-  if (last_orientation_d_target.coeffs().dot(orientation_d_target_.coeffs()) < 0.0) {
-    orientation_d_target_.coeffs() << -orientation_d_target_.coeffs();
-  }
-}
 
 void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period){
   basis_fcn_matrix_.setZero(nr_time_steps_, nr_basis_fcns_);
