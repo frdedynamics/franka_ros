@@ -50,9 +50,9 @@ public: //set to public for testing
   double basis_fcn_width_;
   double nr_time_steps_{3};
   double demo_duration_{30};
+  Eigen::VectorXd basis_fcn_centers_;  
   Eigen::VectorXd mean_weights_;
-  Eigen::VectorXd mean_;
-  Eigen::VectorXd basis_fcn_centers_;
+  Eigen::MatrixXd mean_;
   Eigen::MatrixXd basis_fcn_matrix_;
   Eigen::MatrixXd basis_fcn_matrix_dot_;
   Eigen::MatrixXd basis_fcn_matrix_dot_dot_;

@@ -73,6 +73,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   mean_weights_ = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(temp_mean_weights.data(), temp_mean_weights.size()); // NB! High chance of error while reading the mean_weights here
   center_distance_ = 1.0 / (nr_basis_fcns_ - 1 - 2 * interval_extension_); // TODO: some stuff needs to be read from ros param before these lines
   basis_fcn_width_ = 0.5 * pow(center_distance_, 2);
+  basis_fcn_centers_.setZero(nr_basis_fcns_);
   for (int i = 0; i < nr_basis_fcns_; i++){
     basis_fcn_centers_(i) = - interval_extension_ * center_distance_ +  i * center_distance_;
   }
@@ -146,17 +147,19 @@ void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& pe
   }
   Eigen::MatrixXd basis_fcn_matrix_sum = basis_fcn_matrix_.array().rowwise().sum().inverse();
   basis_fcn_matrix_ = basis_fcn_matrix_.transpose() * basis_fcn_matrix_sum.asDiagonal(); // normalize basis fcns
-  basis_fcn_matrix_ = basis_fcn_matrix_.transpose();
+  Eigen::MatrixXd basis_fcn_matrix_trans = basis_fcn_matrix_.transpose();
+  basis_fcn_matrix_ = basis_fcn_matrix_trans;
 }
 
 void CartesianPoseSubExampleController::computeNextTimeSteps(){
-  for (int t = 0; t < nr_time_steps_; t++){
-    Eigen::MatrixXd basis_fcn_matrix_blockdiag_time_sliced = Eigen::MatrixXd::Zero(basis_fcn_matrix_.rows() * nr_dof_, basis_fcn_centers_.cols() * nr_dof_);
-    for (int i = 0; i < nr_dof_; i++){
-      basis_fcn_matrix_blockdiag_time_sliced.block(i * basis_fcn_matrix_.rows(), i * basis_fcn_matrix_.cols(), basis_fcn_matrix_.rows(), basis_fcn_matrix_.cols()) = basis_fcn_matrix_.row(t);
-    }
-    mean_.row(t) = basis_fcn_matrix_blockdiag_time_sliced * mean_weights_; 
-  }  
+  mean_.setZero(nr_time_steps_, nr_dof_);
+  for (int t = 0; t < nr_time_steps_; t++) {
+      Eigen::MatrixXd basis_fcn_matrix_blockdiag_time_sliced = Eigen::MatrixXd::Zero(nr_dof_, basis_fcn_matrix_.cols() * nr_dof_);
+      for (int i = 0; i < nr_dof_; i++) {
+          basis_fcn_matrix_blockdiag_time_sliced.block(i, i * basis_fcn_matrix_.cols(), basis_fcn_matrix_.row(t).rows(), basis_fcn_matrix_.cols()) = basis_fcn_matrix_.row(t);
+      }
+      mean_.row(t) = basis_fcn_matrix_blockdiag_time_sliced * mean_weights_;
+  }
 }
 
 }  // namespace franka_example_controllers
