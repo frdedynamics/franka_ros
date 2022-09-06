@@ -63,11 +63,15 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   orientation_d_target_.coeffs() << 0.0, 0.0, 0.0, 1.0;
 
   // initialize basis function params
-  node_handle.getParam("promp_params/fixed/nr_basis_fcns", nr_basis_fcns_);
-  node_handle.getParam("promp_params/learned/mean_demo_duration", demo_duration_);
+  ROS_INFO_STREAM("NrDOF: " << nr_dof_);
+  node_handle.getParam("/promp_params/fixed/nr_basis_fcns", nr_basis_fcns_);
+  ROS_INFO_STREAM("NrBasisFcns: " << nr_basis_fcns_);
+  node_handle.getParam("/promp_params/learned/mean_demo_duration", demo_duration_);
+  ROS_INFO_STREAM("Demo Duration: " << demo_duration_);
   std::vector<double> temp_mean_weights;
-  node_handle.getParam("promp_params/learned/meand_weights", temp_mean_weights);
+  node_handle.getParam("/promp_params/learned/mean_weights", temp_mean_weights);
   mean_weights_ = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(temp_mean_weights.data(), temp_mean_weights.size()); // NB! High chance of error while reading the mean_weights here
+  ROS_INFO_STREAM("Mean Weights: " << mean_weights_);
   center_distance_ = 1.0 / (nr_basis_fcns_ - 1 - 2 * interval_extension_); // TODO: some stuff needs to be read from ros param before these lines
   basis_fcn_width_ = 0.5 * pow(center_distance_, 2);
   basis_fcn_centers_.setZero(nr_basis_fcns_);
@@ -80,7 +84,8 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
 
 void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   // get initial pose 
-  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE; // why O_T_EE_d not O_T_EE ?
+  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d; // why O_T_EE_d not O_T_EE ?
+  ROS_INFO_STREAM("Initial_Pos_y: " << initial_pose_[13]);
   // convert to eigen
   Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_pose_.data()));
   // set goal pose to current state
@@ -108,11 +113,16 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
 
   std::array<double, 16> new_pose = initial_pose_;
 
-  for (size_t i = 0; i < 16; i++) {
-    new_pose[i] = new_transform_matrix(i);
-  }
-  cartesian_pose_handle_->setCommand(new_pose);
-
+//  for (size_t i = 0; i < 16; i++) {
+//    new_pose[i] = new_transform_matrix(i);
+//  }
+  new_pose[13] = new_transform_matrix(13);
+  //cartesian_pose_handle_->setCommand(new_pose);
+  ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_pose[13]);
+  ROS_INFO_STREAM("Pos_y: " << new_pose[13]);
+  //ROS_INFO_STREAM("elapesd_time: " << elapsed_time_.toSec());
+  //ROS_INFO_STREAM("period: " << period.toSec());
+ 
  //_____________old______________:
   // update parameters changed online through the interactive
   // target by filtering
