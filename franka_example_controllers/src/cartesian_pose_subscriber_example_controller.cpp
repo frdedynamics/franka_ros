@@ -84,7 +84,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
 
 void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   // get initial pose 
-  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_d; // why O_T_EE_d not O_T_EE ?
+  initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_c; // why O_T_EE_d not O_T_EE ?
   ROS_INFO_STREAM("Initial_Pos_y: " << initial_pose_[13]);
   // convert to eigen
   Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_pose_.data()));
@@ -116,13 +116,20 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
 //  for (size_t i = 0; i < 16; i++) {
 //    new_pose[i] = new_transform_matrix(i);
 //  }
-  new_pose[13] = new_transform_matrix(13);
-  //cartesian_pose_handle_->setCommand(new_pose);
-  ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_pose[13]);
-  ROS_INFO_STREAM("Pos_y: " << new_pose[13]);
+  new_pose = cartesian_pose_handle_->getRobotState().O_T_EE_c;
+  new_pose[13] = new_pose[13] + new_transform_matrix(13)-(-0.216441);
+  //new_pose[13] = new_pose[13]+0.00001;
+  cartesian_pose_handle_->setCommand(new_pose);
+  //ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_pose[13]);
+  //ROS_INFO_STREAM("Pos_y: " << new_pose[13]);
+  ROS_INFO_STREAM("Pos_y_d: " << new_transform_matrix(13)-(-0.216441));
   //ROS_INFO_STREAM("elapesd_time: " << elapsed_time_.toSec());
   //ROS_INFO_STREAM("period: " << period.toSec());
+  //std::array<double, 7> ddq_d = cartesian_pose_handle_->getRobotState().dq;
+  //Eigen::Map<Eigen::VectorXd> ddq_d_vec(&ddq_d[0],7);
+  //ROS_INFO_STREAM("ddq_d: " << ddq_d_vec);
  
+
  //_____________old______________:
   // update parameters changed online through the interactive
   // target by filtering
@@ -140,12 +147,14 @@ void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& pe
   Eigen::VectorXd x_t;
   double elapsed_phase = elapsed_time_.toSec() / demo_duration_;
   double phase_dot = 1 / demo_duration_;
-
+  //ROS_INFO_STREAM("phase_dot: " << phase_dot);
+  ROS_INFO_STREAM("elapsed_phase: " << elapsed_phase);
   for (int t = 0; t < nr_time_steps_; t++){
     x_t = elapsed_phase + (t * period.toSec() * phase_dot) - basis_fcn_centers_.array();
     basis_fcn_matrix_.row(t) = Eigen::exp(- x_t.array().square() / (2*basis_fcn_width_));
     //TODO: basis_fcn_matrix_dot_ and basis_fcn_matrix_dot_dot_
   }
+
   Eigen::MatrixXd basis_fcn_matrix_sum = basis_fcn_matrix_.array().rowwise().sum().inverse();
   basis_fcn_matrix_ = basis_fcn_matrix_.transpose() * basis_fcn_matrix_sum.asDiagonal(); // normalize basis fcns
   Eigen::MatrixXd basis_fcn_matrix_trans = basis_fcn_matrix_.transpose();
@@ -161,6 +170,7 @@ void CartesianPoseSubExampleController::computeNextTimeSteps(){
       }
       mean_.row(t) = basis_fcn_matrix_blockdiag_time_sliced * mean_weights_;
   }
+  //ROS_INFO_STREAM("time steps: " << mean_);
 }
 
 }  // namespace franka_example_controllers
