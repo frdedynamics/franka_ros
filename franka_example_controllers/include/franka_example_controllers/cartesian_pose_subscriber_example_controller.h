@@ -59,6 +59,8 @@ public: //set to public for testing
   void computeBasisFcns(const ros::Duration& period);
   void computeNextTimeSteps();
 
+  ros::Publisher traj_pub_;
+  
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
   void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);
