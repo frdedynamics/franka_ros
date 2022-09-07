@@ -48,7 +48,7 @@ public: //set to public for testing
   double interval_extension_{0};
   double center_distance_;
   double basis_fcn_width_;
-  double nr_time_steps_{3};
+  double nr_time_steps_{1};
   double demo_duration_{30};
   Eigen::VectorXd basis_fcn_centers_;  
   Eigen::VectorXd mean_weights_;
