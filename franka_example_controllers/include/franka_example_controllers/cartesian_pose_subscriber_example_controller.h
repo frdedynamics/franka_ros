@@ -26,7 +26,8 @@ class CartesianPoseSubExampleController
  public:
   bool init(hardware_interface::RobotHW* robot_hardware, ros::NodeHandle& node_handle) override;
   void starting(const ros::Time&) override;
-  void update(const ros::Time&, const ros::Duration& period) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
+  void stopping(const ros::Time& time) override;
 
  private:
   franka_hw::FrankaPoseCartesianInterface* cartesian_pose_interface_;
@@ -60,7 +61,7 @@ public: //set to public for testing
   void computeNextTimeSteps();
 
   ros::Publisher traj_pub_;
-  
+
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
   void goalPoseCallback(const geometry_msgs::PoseStampedConstPtr& msg);

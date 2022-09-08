@@ -100,7 +100,7 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   elapsed_time_ = ros::Duration(0.0);
 }
 
-void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
+void CartesianPoseSubExampleController::update(const ros::Time& time,
                                             const ros::Duration& period) {
   elapsed_time_ += period;
   CartesianPoseSubExampleController::computeBasisFcns(period);
@@ -150,8 +150,18 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   //ROS_INFO_STREAM("Pos_y_d: " << new_transform_matrix(13)-(-0.216441));
   //ROS_INFO_STREAM("elapesd_time: " << elapsed_time_.toSec());
   //ROS_INFO_STREAM("period: " << period.toSec());
+  if (elapsed_time_.toSec() > demo_duration_+1){
+    CartesianPoseSubExampleController::stopRequest(time);
+  }
 }
 
+void CartesianPoseSubExampleController::stopping(const ros::Time& time){
+  ROS_INFO_STREAM("Send final Pose cmd");
+  std::array<double, 16> final_pose{};
+  final_pose = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+  cartesian_pose_handle_->setCommand(final_pose);
+  ROS_INFO_STREAM("STOPPED");
+}
 
 void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period){
   basis_fcn_matrix_.setZero(nr_time_steps_, nr_basis_fcns_);
