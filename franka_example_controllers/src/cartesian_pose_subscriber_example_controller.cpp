@@ -89,7 +89,6 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
 void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   // get initial pose 
   initial_pose_ = cartesian_pose_handle_->getRobotState().O_T_EE_c; // why O_T_EE_d not O_T_EE ?
-  ROS_INFO_STREAM("Initial_Pos_y: " << initial_pose_[13]);
   // convert to eigen
   Eigen::Affine3d initial_transform(Eigen::Matrix4d::Map(initial_pose_.data()));
   // set goal pose to current state
@@ -98,14 +97,6 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.linear());
     
-/*   Eigen::Matrix4d temp_init_pose;
-  temp_init_pose << initial_pose_[0], initial_pose_[1], initial_pose_[2], initial_pose_[3], initial_pose_[4], initial_pose_[5], initial_pose_[6], initial_pose_[7], initial_pose_[8], initial_pose_[9],initial_pose_[10], initial_pose_[11], initial_pose_[12], initial_pose_[13], initial_pose_[14], initial_pose_[15];
-  Eigen::Affine3d init_pose(temp_init_pose);
-  
-  orientation_d_target_ = (Eigen::Quaterniond)init_pose.linear();
-  position_d_target_ = init_pose.translation(); */
-  //pose should be in eigen vec and quat, not trans mat!
-
   elapsed_time_ = ros::Duration(0.0);
 }
 
@@ -117,11 +108,10 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
   orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
   
-  // Interpolate here within one second from inital_pose to pos_d & ori_d
+  // Interpolate within one second from inital_pose to pos_d & ori_d
   double starting_filter_param;
   //starting_filter_param = 1/(1+0.005*exp(12*elapsed_time_.toSec()));
   starting_filter_param = 1 - 1/(1 + pow((1/elapsed_time_.toSec() - 1), 3));
-
   if (starting_filter_param < 0){
     starting_filter_param = 0;
     }
@@ -132,9 +122,9 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
-  pose_msg.pose.position.x = position_d_.coeff(0)-initial_pose_[12];
-  pose_msg.pose.position.y = position_d_.coeff(1)-initial_pose_[13];
-  pose_msg.pose.position.z = position_d_.coeff(2)-initial_pose_[14];
+  pose_msg.pose.position.x = position_d_.coeff(0);
+  pose_msg.pose.position.y = position_d_.coeff(1);
+  pose_msg.pose.position.z = position_d_.coeff(2);
     
   pose_msg.pose.orientation.x = orientation_d_.x();
   pose_msg.pose.orientation.y = orientation_d_.y();
@@ -148,16 +138,9 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   Eigen::Matrix4d new_transform_matrix = new_transform.matrix();
 
   std::array<double, 16> new_pose = initial_pose_;
-
   for (size_t i = 0; i < 16; i++) {
     new_pose[i] = new_transform_matrix(i);
-  }
-  // new_pose = cartesian_pose_handle_->getRobotState().O_T_EE_c;
-  // new_pose[12] = new_transform_matrix(12);
-  // new_pose[13] = new_transform_matrix(13);
-  // new_pose[14] = new_transform_matrix(14);
-  //new_pose[13] = new_pose[13] + new_transform_matrix(13)-(-0.216441);
-  //new_pose[13] = new_pose[13]+0.00001;
+  }  
   cartesian_pose_handle_->setCommand(new_pose);
   // ROS_INFO_STREAM("Init_Pos_x - Pos_x: " << initial_pose_[12] - new_transform_matrix(12));
   // ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_transform_matrix(13));
@@ -167,18 +150,6 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   //ROS_INFO_STREAM("Pos_y_d: " << new_transform_matrix(13)-(-0.216441));
   //ROS_INFO_STREAM("elapesd_time: " << elapsed_time_.toSec());
   //ROS_INFO_STREAM("period: " << period.toSec());
-  //std::array<double, 7> ddq_d = cartesian_pose_handle_->getRobotState().dq;
-  //Eigen::Map<Eigen::VectorXd> ddq_d_vec(&ddq_d[0],7);
-  //ROS_INFO_STREAM("ddq_d: " << ddq_d_vec);
- 
-
- //_____________old______________:
-  // update parameters changed online through the interactive
-  // target by filtering
-  //std::lock_guard<std::mutex> position_d_target_mutex_lock(
-  //     position_and_orientation_d_target_mutex_);
-  // position_d_ = filter_params_ * position_d_target_ + (1.0 - filter_params_) * position_d_;
-  // orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
 }
 
 
