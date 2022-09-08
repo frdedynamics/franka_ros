@@ -119,19 +119,22 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   
   // Interpolate here within one second from inital_pose to pos_d & ori_d
   double starting_filter_param;
-  if ((1.0-elapsed_time_.toSec()) < 0){
+  //starting_filter_param = 1/(1+0.005*exp(12*elapsed_time_.toSec()));
+  starting_filter_param = 1 - 1/(1 + pow((1/elapsed_time_.toSec() - 1), 3));
+
+  if (starting_filter_param < 0){
     starting_filter_param = 0;
-  } else {
-    starting_filter_param = 1.0-elapsed_time_.toSec();
-  }  
+    }
+
+  //ROS_INFO_STREAM("filter_param: " << starting_filter_param); 
   position_d_ = starting_filter_param * position_d_target_ + (1.0 - starting_filter_param) * position_d_;
   orientation_d_ = orientation_d_.slerp(starting_filter_param, orientation_d_target_);
   
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
-  pose_msg.pose.position.x = position_d_.coeff(0);
-  pose_msg.pose.position.y = position_d_.coeff(1);
-  pose_msg.pose.position.z = position_d_.coeff(2);
+  pose_msg.pose.position.x = position_d_.coeff(0)-initial_pose_[12];
+  pose_msg.pose.position.y = position_d_.coeff(1)-initial_pose_[13];
+  pose_msg.pose.position.z = position_d_.coeff(2)-initial_pose_[14];
     
   pose_msg.pose.orientation.x = orientation_d_.x();
   pose_msg.pose.orientation.y = orientation_d_.y();
@@ -146,19 +149,19 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
 
   std::array<double, 16> new_pose = initial_pose_;
 
-  //for (size_t i = 0; i < 16; i++) {
-    //new_pose[i] = new_transform_matrix(i);
-  //}
-  new_pose = cartesian_pose_handle_->getRobotState().O_T_EE_c;
-  //new_pose[12] = new_transform_matrix(12);
-  new_pose[13] = new_transform_matrix(13);
-  //new_pose[14] = new_transform_matrix(14);
+  for (size_t i = 0; i < 16; i++) {
+    new_pose[i] = new_transform_matrix(i);
+  }
+  // new_pose = cartesian_pose_handle_->getRobotState().O_T_EE_c;
+  // new_pose[12] = new_transform_matrix(12);
+  // new_pose[13] = new_transform_matrix(13);
+  // new_pose[14] = new_transform_matrix(14);
   //new_pose[13] = new_pose[13] + new_transform_matrix(13)-(-0.216441);
   //new_pose[13] = new_pose[13]+0.00001;
   cartesian_pose_handle_->setCommand(new_pose);
-  ROS_INFO_STREAM("Init_Pos_x - Pos_x: " << initial_pose_[12] - new_transform_matrix(12));
-  ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_transform_matrix(13));
-  ROS_INFO_STREAM("Init_Pos_z - Pos_z: " << initial_pose_[14] - new_transform_matrix(14));
+  // ROS_INFO_STREAM("Init_Pos_x - Pos_x: " << initial_pose_[12] - new_transform_matrix(12));
+  // ROS_INFO_STREAM("Init_Pos_y - Pos_y: " << initial_pose_[13] - new_transform_matrix(13));
+  // ROS_INFO_STREAM("Init_Pos_z - Pos_z: " << initial_pose_[14] - new_transform_matrix(14));
 
   //ROS_INFO_STREAM("Pos_y: " << new_pose[13]);
   //ROS_INFO_STREAM("Pos_y_d: " << new_transform_matrix(13)-(-0.216441));
