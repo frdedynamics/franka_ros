@@ -97,9 +97,13 @@ void CartesianPoseSubExampleController::starting(const ros::Time& /* time */) {
   orientation_d_ = Eigen::Quaterniond(initial_transform.linear());
   position_d_target_ = initial_transform.translation();
   orientation_d_target_ = Eigen::Quaterniond(initial_transform.linear());
+    
+/*   Eigen::Matrix4d temp_init_pose;
+  temp_init_pose << initial_pose_[0], initial_pose_[1], initial_pose_[2], initial_pose_[3], initial_pose_[4], initial_pose_[5], initial_pose_[6], initial_pose_[7], initial_pose_[8], initial_pose_[9],initial_pose_[10], initial_pose_[11], initial_pose_[12], initial_pose_[13], initial_pose_[14], initial_pose_[15];
+  Eigen::Affine3d init_pose(temp_init_pose);
   
-  position_d_target_ << initial_pose_[12], initial_pose_[13], initial_pose_[14];
-  orientation_d_target_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
+  orientation_d_target_ = (Eigen::Quaterniond)init_pose.linear();
+  position_d_target_ = init_pose.translation(); */
   //pose should be in eigen vec and quat, not trans mat!
 
   elapsed_time_ = ros::Duration(0.0);
@@ -112,16 +116,16 @@ void CartesianPoseSubExampleController::update(const ros::Time& /* time */,
   CartesianPoseSubExampleController::computeNextTimeSteps();
   position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
   orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
+  
   // Interpolate here within one second from inital_pose to pos_d & ori_d
   double starting_filter_param;
-  if ((1-elapsed_time_) < 0){
+  if ((1.0-elapsed_time_.toSec()) < 0){
     starting_filter_param = 0;
   } else {
-    starting_filter_param = 1-elapsed_time_;
-  }
-  
-  position_d_ = starting_filter_param * initial_pose_ + (1.0 - filter_params_) * position_d_;
-  orientation_d_ = orientation_d_.slerp(filter_params_, orientation_d_target_);
+    starting_filter_param = 1.0-elapsed_time_.toSec();
+  }  
+  position_d_ = starting_filter_param * position_d_target_ + (1.0 - starting_filter_param) * position_d_;
+  orientation_d_ = orientation_d_.slerp(starting_filter_param, orientation_d_target_);
   
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
