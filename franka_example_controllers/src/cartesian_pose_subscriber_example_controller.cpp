@@ -114,7 +114,7 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
   orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
   if (mean_.cols() > 1){
-    double servo_d = mean_.coeff(0,7);
+    double servo_d = mean_.coeff(0,7) * 4095 / 360;
     dynamixel_sdk_examples::SetPosition servo_msg;
     servo_msg.id = uint8_t(1);
     servo_msg.position = int32_t(servo_d);
