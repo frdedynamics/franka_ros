@@ -14,6 +14,7 @@
 #include <hardware_interface/hardware_interface.h>
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
+#include <dynamixel_sdk_examples/SetPosition.h>
 
 namespace franka_example_controllers {
 
@@ -22,6 +23,10 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   traj_pub_ = node_handle.advertise<geometry_msgs::PoseStamped>("computed_traj", 1000);
   geometry_msgs::PoseStamped pose_msg;
   traj_pub_.publish(pose_msg);
+
+  servo_pub_ = node_handle.advertise<dynamixel_sdk_examples::SetPosition>("set_position", 1);
+  dynamixel_sdk_examples::SetPosition servo_msg;
+  servo_pub_.publish(servo_msg);
   ros::spinOnce();
 
   cartesian_pose_interface_ = robot_hardware->get<franka_hw::FrankaPoseCartesianInterface>();
@@ -107,7 +112,14 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   CartesianPoseSubExampleController::computeNextTimeSteps();
   position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
   orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
-  
+  if (mean_.cols() > 7){
+    double servo_d = mean_.coeff(0,7);
+    dynamixel_sdk_examples::SetPosition servo_msg;
+    servo_msg.id = uint8_t(1);
+    servo_msg.position = int32_t(servo_d);
+    servo_pub_.publish(servo_msg);
+    }
+
   // Interpolate within one second from inital_pose to pos_d & ori_d
   double starting_filter_param;
   //starting_filter_param = 1/(1+0.005*exp(12*elapsed_time_.toSec()));

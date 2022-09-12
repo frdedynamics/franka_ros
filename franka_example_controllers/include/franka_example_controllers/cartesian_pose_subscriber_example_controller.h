@@ -61,6 +61,7 @@ public: //set to public for testing
   void computeNextTimeSteps();
 
   ros::Publisher traj_pub_;
+  ros::Publisher servo_pub_;
 
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
