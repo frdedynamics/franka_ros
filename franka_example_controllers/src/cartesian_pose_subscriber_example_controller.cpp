@@ -72,6 +72,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   orientation_d_target_.coeffs() << 0.0, 0.0, 0.0, 1.0;
 
   // initialize basis function params
+  node_handle.getParam("/promp_params/fixed/nr_dof", nr_dof_);
   ROS_INFO_STREAM("NrDOF: " << nr_dof_);
   node_handle.getParam("/promp_params/fixed/nr_basis_fcns", nr_basis_fcns_);
   ROS_INFO_STREAM("NrBasisFcns: " << nr_basis_fcns_);
@@ -112,12 +113,13 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   CartesianPoseSubExampleController::computeNextTimeSteps();
   position_d_ << mean_.coeff(0, 0), mean_.coeff(0, 1), mean_.coeff(0, 2);
   orientation_d_.coeffs() << mean_.coeff(0, 4), mean_.coeff(0, 5), mean_.coeff(0, 6), mean_.coeff(0, 3);
-  if (mean_.cols() > 7){
+  if (mean_.cols() > 1){
     double servo_d = mean_.coeff(0,7);
     dynamixel_sdk_examples::SetPosition servo_msg;
     servo_msg.id = uint8_t(1);
     servo_msg.position = int32_t(servo_d);
     servo_pub_.publish(servo_msg);
+    ROS_INFO_STREAM("Servo_pos: " << mean_.coeff(0,7));
     }
 
   // Interpolate within one second from inital_pose to pos_d & ori_d
