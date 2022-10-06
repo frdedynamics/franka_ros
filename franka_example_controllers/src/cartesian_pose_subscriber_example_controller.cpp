@@ -43,6 +43,22 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
     return false;
   }
 
+  auto* model_interface = robot_hardware->get<franka_hw::FrankaModelInterface>();
+  if (model_interface == nullptr) {
+    ROS_ERROR_STREAM(
+        "CartesianImpedanceExampleController: Error getting model interface from hardware");
+    return false;
+  }
+  try {
+    model_handle_ = std::make_unique<franka_hw::FrankaModelHandle>(
+        model_interface->getHandle(arm_id + "_model"));
+  } catch (hardware_interface::HardwareInterfaceException& ex) {
+    ROS_ERROR_STREAM(
+        "CartesianImpedanceExampleController: Exception getting model handle from interface: "
+        << ex.what());
+    return false;
+  }
+
   try {
     cartesian_pose_handle_ = std::make_unique<franka_hw::FrankaCartesianPoseHandle>(
         cartesian_pose_interface_->getHandle(arm_id + "_robot"));
@@ -164,6 +180,14 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   //ROS_INFO_STREAM("Pos_y_d: " << new_transform_matrix(13)-(-0.216441));
   //ROS_INFO_STREAM("elapesd_time: " << elapsed_time_.toSec());
   //ROS_INFO_STREAM("period: " << period.toSec());
+  
+  std::array<double, 42> jacobian_array =
+    model_handle_->getZeroJacobian(franka::Frame::kEndEffector);
+  Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
+  Eigen::FullPivLU<Eigen::Matrix<double, 6, 7>> lu_decomp(jacobian);
+  auto rank = lu_decomp.rank();
+  ROS_INFO_STREAM("Jacobian Rank: " << rank);
+
   if (elapsed_time_.toSec() > demo_duration_+1){
     CartesianPoseSubExampleController::stopRequest(time);
   }

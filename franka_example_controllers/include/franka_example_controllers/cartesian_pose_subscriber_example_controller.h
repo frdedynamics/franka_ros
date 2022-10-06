@@ -17,6 +17,7 @@
 #include <Eigen/Dense>
 
 #include <franka_hw/franka_cartesian_command_interface.h>
+#include <franka_hw/franka_model_interface.h>
 
 namespace franka_example_controllers {
 
@@ -32,6 +33,7 @@ class CartesianPoseSubExampleController
  private:
   franka_hw::FrankaPoseCartesianInterface* cartesian_pose_interface_;
   std::unique_ptr<franka_hw::FrankaCartesianPoseHandle> cartesian_pose_handle_;
+  std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
 
   ros::Duration elapsed_time_;
   double filter_params_{0.005};
