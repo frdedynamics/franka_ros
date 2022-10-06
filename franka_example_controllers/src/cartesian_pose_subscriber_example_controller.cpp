@@ -46,7 +46,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   auto* model_interface = robot_hardware->get<franka_hw::FrankaModelInterface>();
   if (model_interface == nullptr) {
     ROS_ERROR_STREAM(
-        "CartesianImpedanceExampleController: Error getting model interface from hardware");
+        "CartesianPoseSubExampleController: Error getting model interface from hardware");
     return false;
   }
   try {
@@ -54,7 +54,7 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
         model_interface->getHandle(arm_id + "_model"));
   } catch (hardware_interface::HardwareInterfaceException& ex) {
     ROS_ERROR_STREAM(
-        "CartesianImpedanceExampleController: Exception getting model handle from interface: "
+        "CartesianPoseSubExampleController: Exception getting model handle from interface: "
         << ex.what());
     return false;
   }
