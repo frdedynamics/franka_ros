@@ -135,7 +135,7 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
     servo_msg.id = uint8_t(1);
     servo_msg.position = int32_t(servo_d);
     servo_pub_.publish(servo_msg);
-    ROS_INFO_STREAM("Servo_pos: " << mean_.coeff(0,7));
+    //ROS_INFO_STREAM("Servo_pos: " << mean_.coeff(0,7));
     }
 
   // Interpolate within one second from inital_pose to pos_d & ori_d
@@ -186,7 +186,7 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(jacobian_array.data());
   Eigen::FullPivLU<Eigen::Matrix<double, 6, 7>> lu_decomp(jacobian);
   auto rank = lu_decomp.rank();
-  ROS_INFO_STREAM("Jacobian Rank: " << rank);
+  //ROS_INFO_STREAM("Jacobian Rank: " << rank);
 
   if (elapsed_time_.toSec() > demo_duration_+1){
     CartesianPoseSubExampleController::stopRequest(time);
@@ -199,6 +199,7 @@ void CartesianPoseSubExampleController::stopping(const ros::Time& time){
   final_pose = cartesian_pose_handle_->getRobotState().O_T_EE_d;
   cartesian_pose_handle_->setCommand(final_pose);
   ROS_INFO_STREAM("STOPPED");
+  return;
 }
 
 void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period){
@@ -209,7 +210,7 @@ void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& pe
   double elapsed_phase = elapsed_time_.toSec() / demo_duration_;
   double phase_dot = 1 / demo_duration_;
   //ROS_INFO_STREAM("phase_dot: " << phase_dot);
-  ROS_INFO_STREAM("elapsed_phase: " << elapsed_phase);
+  //ROS_INFO_STREAM("elapsed_phase: " << elapsed_phase);
   for (int t = 0; t < nr_time_steps_; t++){
     x_t = elapsed_phase + (t * period.toSec() * phase_dot) - basis_fcn_centers_.array();
     basis_fcn_matrix_.row(t) = Eigen::exp(- x_t.array().square() / (2*basis_fcn_width_));
