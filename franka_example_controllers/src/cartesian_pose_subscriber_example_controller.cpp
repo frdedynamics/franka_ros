@@ -187,17 +187,18 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   Eigen::FullPivLU<Eigen::Matrix<double, 6, 7>> lu_decomp(jacobian);
   auto rank = lu_decomp.rank();
   //ROS_INFO_STREAM("Jacobian Rank: " << rank);
-
-  if (elapsed_time_.toSec() > demo_duration_+1){
+  franka::Errors current_errors = cartesian_pose_handle_->getRobotState().current_errors;
+  //ROS_INFO_STREAM(bool(current_errors));
+  if (elapsed_time_.toSec() > demo_duration_+1 ){ // || bool(current_errors)
     CartesianPoseSubExampleController::stopRequest(time);
   }
 }
 
 void CartesianPoseSubExampleController::stopping(const ros::Time& time){
-  ROS_INFO_STREAM("Send final Pose cmd");
-  std::array<double, 16> final_pose{};
-  final_pose = cartesian_pose_handle_->getRobotState().O_T_EE_d;
-  cartesian_pose_handle_->setCommand(final_pose);
+  //ROS_INFO_STREAM("Send final Pose cmd");
+  //std::array<double, 16> final_pose{};
+  //final_pose = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+  //cartesian_pose_handle_->setCommand(final_pose);
   ROS_INFO_STREAM("STOPPED");
   return;
 }
