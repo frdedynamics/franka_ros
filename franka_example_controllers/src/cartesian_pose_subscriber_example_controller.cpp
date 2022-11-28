@@ -27,6 +27,11 @@ bool CartesianPoseSubExampleController::init(hardware_interface::RobotHW* robot_
   servo_pub_ = node_handle.advertise<dynamixel_sdk_examples::SetPosition>("set_position", 1);
   dynamixel_sdk_examples::SetPosition servo_msg;
   servo_pub_.publish(servo_msg);
+
+  elapsed_time_pub_ = node_handle.advertise<std_msgs::Float64>("elapsed_time",1); 
+  std_msgs::Float64 elapsed_time_msg;
+  elapsed_time_msg.data = 0;
+  elapsed_time_pub_.publish(elapsed_time_msg);
   ros::spinOnce();
 
   cartesian_pose_interface_ = robot_hardware->get<franka_hw::FrankaPoseCartesianInterface>();
@@ -187,20 +192,21 @@ void CartesianPoseSubExampleController::update(const ros::Time& time,
   Eigen::FullPivLU<Eigen::Matrix<double, 6, 7>> lu_decomp(jacobian);
   auto rank = lu_decomp.rank();
   //ROS_INFO_STREAM("Jacobian Rank: " << rank);
-  franka::Errors current_errors = cartesian_pose_handle_->getRobotState().current_errors;
+  //franka::Errors current_errors = cartesian_pose_handle_->getRobotState().current_errors;
   //ROS_INFO_STREAM(bool(current_errors));
-  if (elapsed_time_.toSec() > demo_duration_+1 ){ // || bool(current_errors)
-    CartesianPoseSubExampleController::stopRequest(time);
-  }
+  std_msgs::Float64 elapsed_time_msg;
+  elapsed_time_msg.data = elapsed_time_.toSec();
+  elapsed_time_pub_.publish(elapsed_time_msg);
 }
 
 void CartesianPoseSubExampleController::stopping(const ros::Time& time){
+  franka::Errors current_errors = cartesian_pose_handle_->getRobotState().current_errors;
+  ROS_INFO_STREAM("Error present: " << bool(current_errors));
   //ROS_INFO_STREAM("Send final Pose cmd");
   //std::array<double, 16> final_pose{};
-  //final_pose = cartesian_pose_handle_->getRobotState().O_T_EE_d;
+  //final_pose = cartesian_pose_handle_->getRobotState().O_T_EE;
   //cartesian_pose_handle_->setCommand(final_pose);
   ROS_INFO_STREAM("STOPPED");
-  return;
 }
 
 void CartesianPoseSubExampleController::computeBasisFcns(const ros::Duration& period){

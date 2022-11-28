@@ -15,6 +15,7 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <Eigen/Dense>
+#include <std_msgs/Float64.h>
 
 #include <franka_hw/franka_cartesian_command_interface.h>
 #include <franka_hw/franka_model_interface.h>
@@ -65,6 +66,7 @@ public: //set to public for testing
 
   ros::Publisher traj_pub_;
   ros::Publisher servo_pub_;
+  ros::Publisher elapsed_time_pub_;
 
     // Goal pose subscriber
   ros::Subscriber sub_goal_pose_;
