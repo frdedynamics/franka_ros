@@ -14,6 +14,11 @@
       A controller that executes a short motion based on cartesian poses to demonstrate correct usage
     </description>
   </class>
+  <class name="franka_example_controllers/CartesianPoseSubExampleController" type="franka_example_controllers::CartesianPoseSubExampleController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that executes cartesian movements by subscribing to a cartesian pose goal topic
+    </description>
+  </class>
   <class name="franka_example_controllers/CartesianVelocityExampleController" type="franka_example_controllers::CartesianVelocityExampleController" base_class_type="controller_interface::ControllerBase">
     <description>
       A controller that executes a short motion based on cartesian velocities to demonstrate correct usage
