@@ -27,7 +27,7 @@ cartesian_pose_example_controller:
 
 cartesian_pose_subscriber_example_controller:
     type: franka_example_controllers/CartesianPoseSubExampleController
-    arm_id: panda
+    arm_id: $(arg arm_id)
 
 elbow_example_controller:
     type: franka_example_controllers/ElbowExampleController
